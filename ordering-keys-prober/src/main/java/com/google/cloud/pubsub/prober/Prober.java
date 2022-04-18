@@ -235,7 +235,7 @@ public class Prober {
   private boolean started;
   private Publisher publisher;
   private final Subscriber[] subscribers;
-  private final GrpcSubscriberStub[] pullSubscriberStubs;
+  private GrpcSubscriberStub[] pullSubscribers;
   private final Future<?>[] pullSubscriberFutures;
   private TopicAdminClient topicAdminClient;
   private SubscriptionAdminClient subscriptionAdminClient;
@@ -578,13 +578,14 @@ public class Prober {
     }
   }
 
-  private void doPullIteration(final GrpcSubscriberStub subscriber, int subscriberIndex) {
+  private void doPullIteration(int subscriberIndex) {
     PullRequest pullRequest =
         PullRequest.newBuilder()
             .setSubscription(fullSubscriptionName.toString())
             .setMaxMessages(maxPullMessages)
             .build();
-    ApiFuture<PullResponse> pullResponseFuture = subscriber.pullCallable().futureCall(pullRequest);
+    ApiFuture<PullResponse> pullResponseFuture =
+        pullSubscribers[subscriberIndex].pullCallable().futureCall(pullRequest);
     pullResponseFuture.addListener(
         () -> {
           PullResponse pullResponse = null;
@@ -592,7 +593,7 @@ public class Prober {
             pullResponse = pullResponseFuture.get();
           } catch (InterruptedException | ExecutionException e) {
             logger.log(Level.WARNING, "Could not get pull result.", e);
-            doPullIteration(subscriber, subscriberIndex);
+            doPullIteration(subscriberIndex);
             return;
           }
           List<String> messagesToAck = new ArrayList<>();
@@ -612,7 +613,7 @@ public class Prober {
                     .addAllAckIds(messagesToAck)
                     .build();
 
-            subscriber.acknowledgeCallable().call(acknowledgeRequest);
+            pullSubscribers[subscriberIndex].acknowledgeCallable().call(acknowledgeRequest);
           }
           if (!messagesToNack.isEmpty()) {
             ModifyAckDeadlineRequest modAckRequest =
@@ -621,15 +622,17 @@ public class Prober {
                     .setAckDeadlineSeconds(0)
                     .addAllAckIds(messagesToNack)
                     .build();
-            subscriber.modifyAckDeadlineCallable().call(modAckRequest);
+            pullSubscribers[subscriberIndex].modifyAckDeadlineCallable().call(modAckRequest);
           }
-          doPullIteration(subscriber, subscriberIndex);
+          doPullIteration(subscriberIndex);
         },
         executor);
   }
 
   private void createPullSubscribers() {
+    pullSubscribers = new GrpcSubscriberStub[subscriberCount];
     logger.log(Level.INFO, "Creating Pull Subscribers");
+
     for (int i = 0; i < subscriberCount; ++i) {
       final int index = i;
       pullSubscriberFutures[i] =
@@ -637,15 +640,16 @@ public class Prober {
               () -> {
                 SubscriberStubSettings.Builder subscriberStubSettings =
                     SubscriberStubSettings.newBuilder().setEndpoint(endpoint);
-                try (final GrpcSubscriberStub subscriber =
-                    GrpcSubscriberStub.create(subscriberStubSettings.build())) {
-                  pullSubscriberStubs[index] = subscriber;
-                  for (int j = 0; j < pullCount; ++j) {
-                    doPullIteration(subscriber, index);
-                  }
+                try {
+                  pullSubscribers[index] =
+                      GrpcSubscriberStub.create(subscriberStubSettings.build());
+
                 } catch (IOException e) {
                   logger.log(Level.SEVERE, "Could not create pull subscriber.", e);
                   return;
+                }
+                for (int j = 0; j < pullCount; ++j) {
+                  doPullIteration(index);
                 }
               });
     }
