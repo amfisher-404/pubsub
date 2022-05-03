@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.threeten.bp.Duration;
 
 /**
  * Manages an ordered test on a single topic and a single subscription with a configurable number of
@@ -122,9 +123,18 @@ public class OrderedProber extends Prober {
     this.r = new Random();
   }
 
+
   @Override
   protected Publisher.Builder updatePublisherBuilder(Publisher.Builder builder) {
-    return builder.setEnableMessageOrdering(true);
+    return builder.setEnableMessageOrdering(true)
+           .setRetrySettings(
+                            RetrySettings.newBuilder()
+                                .setTotalTimeout(Duration.ofSeconds(600))
+                                .setInitialRpcTimeout(Duration.ofSeconds(30))
+                                .setMaxRpcTimeout(Duration.ofSeconds(30))
+                                .setMaxAttempts(3)
+                                .build());
+
   }
 
   @Override
