@@ -18,6 +18,7 @@ package com.google.cloud.pubsub.prober;
 import static java.lang.Math.max;
 
 import com.google.api.core.ApiFuture;
+import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.collect.EvictingQueue;
 import com.google.pubsub.v1.PubsubMessage;
