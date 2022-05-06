@@ -18,7 +18,6 @@ package com.google.cloud.pubsub.prober;
 import static java.lang.Math.max;
 
 import com.google.api.core.ApiFuture;
-import com.google.api.gax.retrying.RetrySettings;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.collect.EvictingQueue;
 import com.google.pubsub.v1.PubsubMessage;
@@ -127,14 +126,7 @@ public class OrderedProber extends Prober {
 
   @Override
   protected Publisher.Builder updatePublisherBuilder(Publisher.Builder builder) {
-    return builder.setEnableMessageOrdering(true)
-           .setRetrySettings(
-                            RetrySettings.newBuilder()
-                                .setTotalTimeout(Duration.ofSeconds(600))
-                                .setInitialRpcTimeout(Duration.ofSeconds(30))
-                                .setMaxRpcTimeout(Duration.ofSeconds(30))
-                                .setMaxAttempts(3)
-                                .build());
+    return builder.setEnableMessageOrdering(true);
 
   }
 
