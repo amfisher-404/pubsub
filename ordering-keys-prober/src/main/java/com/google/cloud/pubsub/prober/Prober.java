@@ -422,8 +422,8 @@ public class Prober {
             Level.WARNING, "Sleep before creating new topic and subscription interrupted.", e);
       }
     }
-    createTopic();
-    createSubscription();
+    // createTopic();
+    // createSubscription();
     createPublisher();
     switch (subscriptionType) {
       case STREAMING_PULL:
