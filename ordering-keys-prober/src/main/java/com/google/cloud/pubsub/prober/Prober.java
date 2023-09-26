@@ -576,6 +576,16 @@ public class Prober {
         logger.log(Level.WARNING, "Failed to create subscriber for " + fullSubscriptionName, e);
       }
     }
+    if (noPublish){
+     generatePublishesFuture =
+        executor.scheduleAtFixedRate( 
+            () -> {
+              try {} 
+              catch (RuntimeException e) {
+                logger.log(Level.WARNING, "streaming pull interrupted", e);
+              }
+            }, 0, 5000, MILLISECONDS);
+        }
   }
 
   private void doPullIteration(int subscriberIndex) {
