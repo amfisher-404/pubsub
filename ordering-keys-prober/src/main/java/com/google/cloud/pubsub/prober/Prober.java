@@ -566,7 +566,8 @@ public class Prober {
             Subscriber.newBuilder(fullSubscriptionName, receiver)
                 .setParallelPullCount(subscriberStreamCount)
                 .setFlowControlSettings(flowControlSettings)
-                .setEndpoint(endpoint);;
+                .setEndpoint(endpoint)
+                .setMaxDurationPerAckExtension(Duration.ofSeconds(600));
         builder = updateSubscriberBuilder(builder);
         Subscriber subscriber = builder.build();
         subscribers[i] = subscriber;
