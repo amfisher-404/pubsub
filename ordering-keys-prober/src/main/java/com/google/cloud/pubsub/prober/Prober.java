@@ -62,7 +62,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
-import org.threeten.Duration;
+import org.threeten.bp.Duration;
 
 /**
  * Manages a load test on a single topic and a single subscription with a configurable number of
@@ -568,7 +568,7 @@ public class Prober {
                 .setParallelPullCount(subscriberStreamCount)
                 .setFlowControlSettings(flowControlSettings)
                 .setEndpoint(endpoint)
-                .setMaxDurationPerAckExtension(org.threeten.Duration.ofSeconds(600));
+                .setMaxDurationPerAckExtension(org.threeten.bp.Duration.ofSeconds(600));
         builder = updateSubscriberBuilder(builder);
         Subscriber subscriber = builder.build();
         subscribers[i] = subscriber;
